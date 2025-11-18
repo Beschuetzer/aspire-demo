@@ -1,3 +1,5 @@
+name: Azure DevOps Deployment
+
 # Run when commits are pushed to main
 on:
   workflow_dispatch:
