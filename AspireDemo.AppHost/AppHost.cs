@@ -12,8 +12,8 @@ if (deployToAzure)
 }
 else
 {
-    // When running locally with Docker Compose
-    builder.AddDockerComposeEnvironment("env");
+    // When running locally with Docker Compose (without dashboard)
+    builder.AddDockerComposeEnvironment("env").WithDashboard(false);
 }
 
 // Add OpenTelemetry Collector

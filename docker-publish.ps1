@@ -5,4 +5,4 @@ param(
 )
 
 $env:DEPLOY_TO_AZURE = "false"
-Invoke-Expression "aspire publish -o $outputDir"
+Invoke-Expression "aspire do prepare-env"
