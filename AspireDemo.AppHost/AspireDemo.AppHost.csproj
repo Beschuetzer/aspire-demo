@@ -1,5 +1,4 @@
-<Project Sdk="Aspire.AppHost.Sdk/13.0.0">
-
+﻿<Project Sdk="Aspire.AppHost.Sdk/13.0.0">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
@@ -7,14 +6,12 @@
     <Nullable>enable</Nullable>
     <UserSecretsId>00d54a3b-efdd-4580-9410-c8a2e5c0eca7</UserSecretsId>
   </PropertyGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\AspireDemo.ApiService\AspireDemo.ApiService.csproj" />
     <ProjectReference Include="..\AspireDemo.Web\AspireDemo.Web.csproj" />
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Aspire.Hosting.Azure.AppContainers" Version="13.0.0" />
+    <PackageReference Include="Aspire.Hosting.Docker" Version="13.0.0-preview.1.25560.3" />
   </ItemGroup>
-
 </Project>
