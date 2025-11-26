@@ -1,0 +1,50 @@
+version: "3.9"
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    networks:
+      - aspire
+  loki:
+    image: grafana/loki:2.8.2
+    command:
+      - "-config.file=/etc/loki/local-config.yaml"
+    volumes:
+      - ./monitoring/loki-config.yaml:/etc/loki/local-config.yaml:ro
+    ports:
+      - "3100:3100"
+    networks:
+      - aspire
+  tempo:
+    image: grafana/tempo:2.5.0
+    command:
+      - "-config.file=/etc/tempo/local-config.yaml"
+    volumes:
+      - ./monitoring/tempo-config.yaml:/etc/tempo/local-config.yaml:ro
+    ports:
+      - "9411:9411"
+    networks:
+      - aspire
+  grafana:
+    image: grafana/grafana:10.1.0
+    depends_on:
+      - tempo
+      - loki
+      - prometheus
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana-provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - aspire
+networks:
+  aspire:
+    external: true
+volumes:
+  grafana-data:
