@@ -1,0 +1,26 @@
+auth_enabled: false
+server:
+  http_listen_port: 9411
+  log_level: info
+  grpc_listen_port: 9095
+distributor:
+  receivers:
+    jaeger:
+      protocols:
+        thrift_http:
+          endpoint: 0.0.0.0:14268
+        grpc:
+          endpoint: 0.0.0.0:4317
+        thrift_binary:
+          endpoint: 0.0.0.0:6832
+ingester:
+  lifecycler:
+    ring:
+      kvstore:
+        store: inmemory
+    final_sleep: 0s
+storage:
+  trace:
+    backend: local
+    local:
+      path: /var/tempo/traces
