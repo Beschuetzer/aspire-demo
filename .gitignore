@@ -3,3 +3,4 @@
 *.vs
 .azure
 *.csproj.user
+.fake

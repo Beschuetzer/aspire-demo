@@ -16,31 +16,29 @@ else
     builder.AddDockerComposeEnvironment("env").WithDashboard(false);
 }
 
-// Add OpenTelemetry Collector
-// var otelCollector = builder.AddOpenTelemetryCollector(
-//     "otel-collector",
-//     "otel-collector-config.yaml"
-// );
+//Add OpenTelemetry Collector
+var otelCollector = builder.AddOpenTelemetryCollector(
+    "otel-collector",
+    "otel-collector-config.yaml"
+);
 
 var apiService = builder
     .AddProject<Projects.AspireDemo_ApiService>("apiservice")
-    .WithHttpHealthCheck("/health");
-
-// .WithEnvironment(
-//     "OTEL_EXPORTER_OTLP_ENDPOINT",
-//     otelCollector.GetEndpoint(OpenTelemetryCollectorResource.OtlpGrpcEndpointName)
-// );
+    .WithHttpHealthCheck("/health")
+    .WithEnvironment(
+        "OTEL_EXPORTER_OTLP_ENDPOINT",
+        otelCollector.GetEndpoint(OpenTelemetryCollectorResource.OtlpGrpcEndpointName)
+    );
 
 builder
     .AddProject<Projects.AspireDemo_Web>("webfrontend")
     .WithExternalHttpEndpoints()
     .WithHttpHealthCheck("/health")
     .WithReference(apiService)
-    .WaitFor(apiService);
-
-// .WithEnvironment(
-//     "OTEL_EXPORTER_OTLP_ENDPOINT",
-//     otelCollector.GetEndpoint(OpenTelemetryCollectorResource.OtlpGrpcEndpointName)
-// );
+    .WaitFor(apiService)
+    .WithEnvironment(
+        "OTEL_EXPORTER_OTLP_ENDPOINT",
+        otelCollector.GetEndpoint(OpenTelemetryCollectorResource.OtlpGrpcEndpointName)
+    );
 
 builder.Build().Run();
