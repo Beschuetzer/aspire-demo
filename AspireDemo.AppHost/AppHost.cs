@@ -22,11 +22,24 @@ else
 }
 
 // Add monitoring stack when deploying
-var prometheus = builder.AddPrometheus("prometheus", "Monitoring/prometheus.yml", port: 9090);
-var loki = builder.AddLoki("loki", "Monitoring/loki-config.yaml", port: 3100);
-var tempo = builder.AddTempo("tempo", "Monitoring/tempo-config.yaml", httpPort: 9411);
+// Note: Port mapping is only for local development; Azure Container Apps handles ports automatically
+var prometheus = builder.AddPrometheus(
+    "prometheus",
+    "Monitoring/prometheus.yml",
+    port: deployToAzure ? null : 9090
+);
+var loki = builder.AddLoki(
+    "loki",
+    "Monitoring/loki-config.yaml",
+    port: deployToAzure ? null : 3100
+);
+var tempo = builder.AddTempo(
+    "tempo",
+    "Monitoring/tempo-config.yaml",
+    httpPort: deployToAzure ? null : 9411
+);
 var grafana = builder
-    .AddGrafana("grafana", "Monitoring/grafana-provisioning", port: 3000)
+    .AddGrafana("grafana", "Monitoring/grafana-provisioning", port: deployToAzure ? null : 3000)
     .WaitFor(prometheus)
     .WaitFor(loki)
     .WaitFor(tempo);
