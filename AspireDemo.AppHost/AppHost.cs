@@ -8,12 +8,16 @@ var deployToAzure = builder.Configuration["DEPLOY_TO_AZURE"] == "true";
 if (deployToAzure)
 {
     // When deploying to Azure (via azd or aspire publish)
-    builder.AddAzureContainerAppEnvironment("env");
+    builder
+        .AddAzureContainerAppEnvironment("env")
+        .WithDashboard(!builder.ExecutionContext.IsPublishMode);
 }
 else
 {
     // When running locally with Docker Compose (without dashboard)
-    builder.AddDockerComposeEnvironment("env").WithDashboard(false);
+    builder
+        .AddDockerComposeEnvironment("env")
+        .WithDashboard(!builder.ExecutionContext.IsPublishMode);
 }
 
 //Add OpenTelemetry Collector
