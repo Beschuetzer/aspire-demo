@@ -1,3 +1,4 @@
+using AspireDemo.AppHost.Monitoring;
 using MetricsApp.AppHost.OpenTelemetryCollector;
 
 var builder = DistributedApplication.CreateBuilder(args);
@@ -20,11 +21,21 @@ else
         .WithDashboard(!builder.ExecutionContext.IsPublishMode);
 }
 
-//Add OpenTelemetry Collector
-var otelCollector = builder.AddOpenTelemetryCollector(
-    "otel-collector",
-    "otel-collector-config.yaml"
-);
+// Add monitoring stack when deploying
+var prometheus = builder.AddPrometheus("prometheus", "Monitoring/prometheus.yml", port: 9090);
+var loki = builder.AddLoki("loki", "Monitoring/loki-config.yaml", port: 3100);
+var tempo = builder.AddTempo("tempo", "Monitoring/tempo-config.yaml", httpPort: 9411);
+var grafana = builder
+    .AddGrafana("grafana", "Monitoring/grafana-provisioning", port: 3000)
+    .WaitFor(prometheus)
+    .WaitFor(loki)
+    .WaitFor(tempo);
+
+// Add OpenTelemetry Collector - receives telemetry from apps and forwards to monitoring stack
+var otelCollector = builder
+    .AddOpenTelemetryCollector("otel-collector", "otel-collector-config.yaml")
+    .WaitFor(prometheus)
+    .WaitFor(tempo);
 
 var apiService = builder
     .AddProject<Projects.AspireDemo_ApiService>("apiservice")

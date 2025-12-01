@@ -4,3 +4,4 @@
 .azure
 *.csproj.user
 .fake
+**/aspire-output
