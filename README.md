@@ -1,73 +1,180 @@
-# Next Steps after `azd init`
+# Aspire Demo
 
-## Table of Contents
+A .NET Aspire demo application showcasing a distributed system with a web frontend, API service, and a full observability stack.
 
-1. [Next Steps](#next-steps)
-2. [What was added](#what-was-added)
-3. [Billing](#billing)
-4. [Troubleshooting](#troubleshooting)
+## Architecture
 
-## Next Steps
-
-### Provision infrastructure and deploy application code
-
-Run `azd up` to provision your infrastructure and deploy to Azure in one step (or run `azd provision` then `azd deploy` to accomplish the tasks separately). Visit the service endpoints listed to see your application up-and-running!
-
-To troubleshoot any issues, see [troubleshooting](#troubleshooting).
-
-### Configure CI/CD pipeline
-
-Run `azd pipeline config -e <environment name>` to configure the deployment pipeline to connect securely to Azure. An environment name is specified here to configure the pipeline with a different environment for isolation purposes. Run `azd env list` and `azd env set` to reselect the default environment after this step.
-
-- Deploying with `GitHub Actions`: Select `GitHub` when prompted for a provider. If your project lacks the `azure-dev.yml` file, accept the prompt to add it and proceed with pipeline configuration.
-
-- Deploying with `Azure DevOps Pipeline`: Select `Azure DevOps` when prompted for a provider. If your project lacks the `azure-dev.yml` file, accept the prompt to add it and proceed with pipeline configuration.
-
-## What was added
-
-### Infrastructure configuration
-
-To describe the infrastructure and application, an `azure.yaml` was added with the following directory structure:
-
-```yaml
-- azure.yaml     # azd project configuration
+```
+┌─────────────────┐     ┌─────────────────┐
+│   webfrontend   │────▶│   apiservice    │
+│  (Blazor App)   │     │   (Minimal API) │
+└────────┬────────┘     └────────┬────────┘
+         │                       │
+         └───────────┬───────────┘
+                     ▼
+           ┌─────────────────┐
+           │  otel-collector │
+           └────────┬────────┘
+                    │
+     ┌──────────────┼──────────────┐
+     ▼              ▼              ▼
+┌─────────┐  ┌───────────┐  ┌───────────┐
+│  Tempo  │  │Prometheus │  │   Loki    │
+│(traces) │  │ (metrics) │  │  (logs)   │
+└────┬────┘  └─────┬─────┘  └─────┬─────┘
+     │             │              │
+     └─────────────┼──────────────┘
+                   ▼
+            ┌───────────┐
+            │  Grafana  │
+            │(dashboards)│
+            └───────────┘
 ```
 
-This file contains a single service, which references your project's App Host. When needed, `azd` generates the required infrastructure as code in memory and uses it.
+## Prerequisites
 
-If you would like to see or modify the infrastructure that `azd` uses, run `azd infra gen` to generate it to disk.
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- [Docker](https://www.docker.com/products/docker-desktop) or [Podman](https://podman.io/)
+- [Azure Developer CLI (azd)](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) (for Azure deployment)
 
-If you do this, some additional directories will be created:
+## Running Locally
 
-```yaml
-- infra/            # Infrastructure as Code (bicep) files
-  - main.bicep      # main deployment module
-  - resources.bicep # resources shared across your application's services
+### Using Aspire (Recommended)
+
+Run the application with the Aspire dashboard:
+
+```bash
+dotnet run --project AspireDemo.AppHost
 ```
 
-In addition, for each project resource referenced by your app host, a `containerApp.tmpl.yaml` file will be created in a directory named `manifests` next the project file. This file contains the infrastructure as code for running the project on Azure Container Apps.
+This starts all services including:
 
-*Note*: Once you have generated your infrastructure to disk, those files are the source of truth for azd. Any changes made to `azure.yaml` or your App Host will not be reflected in the infrastructure until you regenerate it with `azd infra gen` again. It will prompt you before overwriting files. You can pass `--force` to force `azd infra gen` to overwrite the files without prompting.
+- **webfrontend** - Blazor web application
+- **apiservice** - Backend API
+- **otel-collector** - OpenTelemetry Collector
+- **prometheus** - Metrics storage (<http://localhost:9090>)
+- **loki** - Log aggregation (<http://localhost:3100>)
+- **tempo** - Distributed tracing (<http://localhost:9411>)
+- **grafana** - Dashboards and visualization (<http://localhost:3000>)
 
-## Billing
+### Using Docker Compose
 
-Visit the *Cost Management + Billing* page in Azure Portal to track current spend. For more information about how you're billed, and how you can monitor the costs incurred in your Azure subscriptions, visit [billing overview](https://learn.microsoft.com/azure/developer/intro/azure-developer-billing).
+Generate the Docker Compose output and run:
 
-## Troubleshooting
+```powershell
+.\docker-publish.ps1
+cd AspireDemo.AppHost\aspire-output
+docker compose up
+```
 
-Q: I visited the service endpoint listed, and I'm seeing a blank page, a generic welcome page, or an error page.
+## Deploying to Azure via azd
 
-A: Your service may have failed to start, or it may be missing some configuration settings. To investigate further:
+### Initial Setup
 
-1. Run `azd show`. Click on the link under "View in Azure Portal" to open the resource group in Azure Portal.
-2. Navigate to the specific Container App service that is failing to deploy.
-3. Click on the failing revision under "Revisions with Issues".
-4. Review "Status details" for more information about the type of failure.
-5. Observe the log outputs from Console log stream and System log stream to identify any errors.
-6. If logs are written to disk, use *Console* in the navigation to connect to a shell within the running container.
+1. Log in to Azure:
 
-For more troubleshooting information, visit [Container Apps troubleshooting](https://learn.microsoft.com/azure/container-apps/troubleshooting). 
+   ```powershell
+   .\azd-deploy.ps1 -Command "auth login"
+   ```
 
-### Additional information
+2. Initialize the environment:
 
-For additional information about setting up your `azd` project, visit our official [docs](https://learn.microsoft.com/azure/developer/azure-developer-cli/make-azd-compatible?pivots=azd-convert).
+   ```powershell
+   .\azd-deploy.ps1 -Command "init"
+   ```
+
+3. Provision infrastructure and deploy:
+
+   ```powershell
+   .\azd-deploy.ps1 -Command "up"
+   ```
+
+### Subsequent Deployments
+
+To deploy updates:
+
+```powershell
+.\azd-deploy.ps1 -Command "deploy"
+```
+
+To provision infrastructure changes:
+
+```powershell
+.\azd-deploy.ps1 -Command "provision"
+```
+
+### CI/CD with GitHub Actions
+
+The repository includes a GitHub Actions workflow (`.github/workflows/azure-dev.yml`) that automatically deploys to Azure on pushes to `main`.
+
+Required GitHub repository variables:
+
+- `AZURE_CLIENT_ID`
+- `AZURE_ENV_NAME`
+- `AZURE_LOCATION`
+- `AZURE_SUBSCRIPTION_ID`
+- `AZURE_TENANT_ID`
+
+## Deploying with Docker Compose
+
+Generate the Docker Compose files for standalone deployment:
+
+```powershell
+.\docker-publish.ps1
+```
+
+This creates output in `AspireDemo.AppHost/aspire-output/` containing:
+
+- `docker-compose.yaml` - Main compose file
+- `.env.Production` - Environment variables
+- Container images published to local registry
+
+To run the generated compose file:
+
+```bash
+cd AspireDemo.AppHost/aspire-output
+docker compose up -d
+```
+
+## Observability
+
+### Grafana Dashboards
+
+Access Grafana at <http://localhost:3000> (default credentials: admin/admin)
+
+Pre-configured datasources:
+
+- **Prometheus** - Metrics from applications and infrastructure
+- **Loki** - Aggregated logs from all services
+- **Tempo** - Distributed traces with correlation to logs
+
+### OpenTelemetry
+
+Both `webfrontend` and `apiservice` are configured to send telemetry to the OTEL Collector:
+
+- **Traces** → Tempo
+- **Metrics** → Prometheus (via remote write)
+- **Logs** → Debug exporter (configurable)
+
+## Project Structure
+
+```
+AspireDemo/
+├── AspireDemo.AppHost/          # Aspire orchestration
+│   ├── Monitoring/              # Monitoring stack configs
+│   │   ├── prometheus.yml
+│   │   ├── loki-config.yaml
+│   │   ├── tempo-config.yaml
+│   │   └── grafana-provisioning/
+│   ├── OpenTelemetryCollector/  # OTEL collector resource
+│   └── otel-collector-config.yaml
+├── AspireDemo.ApiService/       # Backend API project
+├── AspireDemo.Web/              # Blazor frontend project
+├── AspireDemo.ServiceDefaults/  # Shared service configuration
+├── AspireDemo.Tests/            # Integration tests
+└── .github/workflows/           # CI/CD pipelines
+```
+
+## License
+
+MIT
