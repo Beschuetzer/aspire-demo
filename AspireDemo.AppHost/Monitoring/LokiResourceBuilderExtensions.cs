@@ -14,8 +14,6 @@ public static class LokiResourceBuilderExtensions
         return builder
             .AddDockerfile(name, "Monitoring/loki")
             .WithArgs("-config.file=/etc/loki/local-config.yaml")
-            .WithVolume("loki-storage", "/loki")
-            .WithVolume("loki-wal", "/wal")
             .WithHttpEndpoint(port: port, targetPort: 3100, name: "http");
     }
 }

@@ -14,7 +14,6 @@ public static class TempoResourceBuilderExtensions
         return builder
             .AddDockerfile(name, "Monitoring/tempo")
             .WithArgs("-config.file=/etc/tempo/local-config.yaml")
-            .WithVolume("tempo-data", "/var/tempo")
             .WithHttpEndpoint(port: httpPort, targetPort: 9411, name: "http")
             .WithEndpoint(targetPort: 4317, name: "otlp-grpc", scheme: "http")
             .WithEndpoint(targetPort: 4318, name: "otlp-http", scheme: "http");

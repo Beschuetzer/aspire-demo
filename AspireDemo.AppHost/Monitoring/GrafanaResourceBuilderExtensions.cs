@@ -13,7 +13,6 @@ public static class GrafanaResourceBuilderExtensions
     {
         return builder
             .AddDockerfile(name, "Monitoring/grafana")
-            .WithVolume("grafana-data", "/var/lib/grafana")
             .WithHttpEndpoint(port: port, targetPort: 3000, name: "http");
     }
 }
